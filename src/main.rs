@@ -82,5 +82,5 @@ async fn process_request(mut tcp_stream: TcpStream, socket_addr: SocketAddr, _st
         }
     };
 
-    info!(?request);
+    info!(method = %request.method(), uri = %request.uri());
 }
