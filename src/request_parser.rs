@@ -1,6 +1,7 @@
 use std::{io::BufRead, str::FromStr};
 
 use http::{HeaderMap, HeaderName, HeaderValue, Method, Request, Uri, Version};
+use reqwest::Body;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -30,6 +31,15 @@ pub enum RequestParseError {
 #[derive(Debug)]
 pub enum RequestBody {
     Bytes(Vec<u8>),
+}
+
+#[allow(clippy::from_over_into)]
+impl Into<Body> for &RequestBody {
+    fn into(self) -> Body {
+        match self {
+            RequestBody::Bytes(bytes) => Body::from(bytes.clone()),
+        }
+    }
 }
 
 pub fn parse(raw_bytes: &[u8]) -> Result<Request<Option<RequestBody>>, RequestParseError> {

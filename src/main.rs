@@ -3,7 +3,7 @@ use std::net::SocketAddr;
 use clap::Parser;
 use config::Config;
 use tokio::{
-    io::AsyncReadExt,
+    io::{AsyncReadExt, AsyncWriteExt},
     net::{TcpListener, TcpStream},
 };
 use tracing::{error, info};
@@ -16,6 +16,8 @@ mod config;
 mod load_balancer;
 mod logger;
 mod request_parser;
+mod request_sender;
+mod response_bytes;
 mod state;
 
 #[tokio::main]
@@ -51,6 +53,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         };
 
+        // TODO: use a semaphore or any other mechanisms to limit the number of spawned tasks
         // spawn a new tokio task to avoid blocking the main loop
         tokio::spawn(process_request(tcp_stream, socket_addr, state.clone()));
     }
@@ -106,4 +109,23 @@ async fn process_request(mut tcp_stream: TcpStream, socket_addr: SocketAddr, _st
         load_balancer.choose_one()
     };
     info!(%backend_addr);
+
+    // request the backend
+    let response = match request_sender::send_request(request, backend_addr).await {
+        Ok(response) => response,
+        Err(err) => {
+            error!("failed to send request to backend: {}", err);
+            return;
+        }
+    };
+
+    // TODO: check if we need to cache the response
+
+    // Send the response to the client
+    let raw_response = response_bytes::to_bytes(response);
+    if let Err(err) = tcp_stream.write_all(&raw_response).await {
+        error!("failed to write response to the client: {}", err);
+    }
+
+    info!("sent response to client");
 }
