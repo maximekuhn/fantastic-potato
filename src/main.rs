@@ -92,6 +92,7 @@ async fn process_request(mut tcp_stream: TcpStream, socket_addr: SocketAddr, _st
         error!("No app found for given URI");
         return;
     };
+    drop(apps);
 
     info!(%app_name);
 
