@@ -8,7 +8,9 @@ edition = "2021"
 [dependencies]
 clap = { version = "4.5.4", features = ["derive"] }
 http = "1.1.0"
+rand = "0.8.5"
 serde = { version = "1.0.201", features = ["derive"] }
+serde_with = "3.8.1"
 serde_yaml = "0.9.34"
 thiserror = "1.0.60"
 tokio = { version = "1.37.0", features = ["full"] }

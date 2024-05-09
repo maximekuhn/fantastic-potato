@@ -13,6 +13,7 @@ use crate::{args::Args, state::State};
 mod app_resolver;
 mod args;
 mod config;
+mod load_balancer;
 mod logger;
 mod request_parser;
 mod state;
@@ -93,4 +94,15 @@ async fn process_request(mut tcp_stream: TcpStream, socket_addr: SocketAddr, _st
     };
 
     info!(%app_name);
+
+    // apply load balancing
+    let Some(load_balancer) = _state.load_balancers.get(&app_name) else {
+        error!("No load balancer found for given app");
+        return;
+    };
+    let backend_addr = {
+        let mut load_balancer = load_balancer.lock().await;
+        load_balancer.choose_one()
+    };
+    info!(%backend_addr);
 }

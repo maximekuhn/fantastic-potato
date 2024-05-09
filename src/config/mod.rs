@@ -48,6 +48,8 @@ impl Config {
         if !(self.server.listen_addr.is_private() || self.server.listen_addr.is_loopback()) {
             return Err("server.listen_addr must be loopback or private");
         }
+
+        // TODO: check that not app path conflicts with another one
         Ok(self)
     }
 }
