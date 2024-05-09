@@ -1,13 +1,17 @@
+use std::collections::HashMap;
+
 use serde::Deserialize;
 use thiserror::Error;
 
-use self::server::ServerConfig;
+use self::{app::AppConfig, server::ServerConfig};
 
+pub mod app;
 pub mod server;
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
     pub server: ServerConfig,
+    pub apps: HashMap<String /* app name */, AppConfig>,
 }
 
 #[derive(Debug, Error)]

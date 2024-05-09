@@ -10,6 +10,7 @@ use tracing::{error, info};
 
 use crate::{args::Args, state::State};
 
+mod app_resolver;
 mod args;
 mod config;
 mod logger;
@@ -37,7 +38,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("Listening on {:?}", tcp_listener.local_addr()?);
 
     // create the state using the provided config
-    let state = State::new();
+    let state = State::from(config);
 
     // main loop to handle incoming requests
     loop {
@@ -83,4 +84,13 @@ async fn process_request(mut tcp_stream: TcpStream, socket_addr: SocketAddr, _st
     };
 
     info!(method = %request.method(), uri = %request.uri());
+
+    // resolve the app the request should be redirected to
+    let apps = _state.apps.read().await;
+    let Some(app_name) = app_resolver::resolve(request.uri().to_string().as_str(), &apps) else {
+        error!("No app found for given URI");
+        return;
+    };
+
+    info!(%app_name);
 }
