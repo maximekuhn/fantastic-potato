@@ -3,6 +3,7 @@
 ## reverse-proxy
 - [x] full request loop (client -> reverse-proxy -> backend -> reverse-proxy -> client)
 - [ ] config validation (yaml file)
+- [ ] config timeout duration for a request
 - [ ] handle TLS/SSL
 - [ ] caching
 - [ ] load balancing

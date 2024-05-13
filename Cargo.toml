@@ -16,4 +16,6 @@ serde_yaml = "0.9.34"
 thiserror = "1.0.60"
 tokio = { version = "1.37.0", features = ["full"] }
 tracing = "0.1.40"
-tracing-subscriber = { version = "0.3.18", features = ["fmt"] }
+tracing-appender = "0.2.3"
+tracing-subscriber = { version = "0.3.18", features = ["json"] }
+uuid = { version = "1.8.0", features = ["fast-rng", "v4"] }

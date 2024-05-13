@@ -1,5 +1,3 @@
-use std::net::SocketAddr;
-
 use clap::Parser;
 use config::Config;
 use tokio::{
@@ -7,6 +5,7 @@ use tokio::{
     net::{TcpListener, TcpStream},
 };
 use tracing::{error, info};
+use uuid::Uuid;
 
 use crate::{args::Args, state::State};
 
@@ -45,7 +44,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // main loop to handle incoming requests
     loop {
-        let (tcp_stream, socket_addr) = match tcp_listener.accept().await {
+        let (tcp_stream, _) = match tcp_listener.accept().await {
             Ok((stream, socket)) => (stream, socket),
             Err(err) => {
                 error!("failed to accept incoming TCP stream: {}", err);
@@ -55,12 +54,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         // TODO: use a semaphore or any other mechanisms to limit the number of spawned tasks
         // spawn a new tokio task to avoid blocking the main loop
-        tokio::spawn(process_request(tcp_stream, socket_addr, state.clone()));
+        tokio::spawn(process_request(tcp_stream, state.clone()));
     }
 }
 
-#[tracing::instrument(skip(tcp_stream, _state))]
-async fn process_request(mut tcp_stream: TcpStream, socket_addr: SocketAddr, _state: State) {
+#[tracing::instrument(skip_all, fields(req_id = %Uuid::new_v4()))]
+async fn process_request(mut tcp_stream: TcpStream, state: State) {
     const BUFFER_SIZE: usize = 1024;
 
     // read incoming stream into a buffer
@@ -90,7 +89,7 @@ async fn process_request(mut tcp_stream: TcpStream, socket_addr: SocketAddr, _st
     info!(method = %request.method(), uri = %request.uri());
 
     // resolve the app the request should be redirected to
-    let apps = _state.apps.read().await;
+    let apps = state.apps.read().await;
     let Some(app_name) = app_resolver::resolve(request.uri().to_string().as_str(), &apps) else {
         error!("No app found for given URI");
         return;
@@ -100,7 +99,8 @@ async fn process_request(mut tcp_stream: TcpStream, socket_addr: SocketAddr, _st
     info!(%app_name);
 
     // apply load balancing
-    let Some(load_balancer) = _state.load_balancers.get(&app_name) else {
+    // TODO: if the app only has 1 backend, no need to lock anything
+    let Some(load_balancer) = state.load_balancers.get(&app_name) else {
         error!("No load balancer found for given app");
         return;
     };
