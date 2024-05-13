@@ -72,7 +72,7 @@ async fn process_request(mut tcp_stream: TcpStream, state: State) {
         }
     };
 
-    info!("read {} bytes from TCP stream", n_read);
+    info!({ n_bytes_read = n_read }, "read from TCP stream");
 
     // XXX: maybe include n_read (0..=n_read)
     let raw_bytes = &buffer[0..n_read];
@@ -124,8 +124,11 @@ async fn process_request(mut tcp_stream: TcpStream, state: State) {
     // Send the response to the client
     let raw_response = response_bytes::to_bytes(response);
     if let Err(err) = tcp_stream.write_all(&raw_response).await {
-        error!("failed to write response to the client: {}", err);
+        error!({ %err }, "failed to write response to the client");
     }
 
-    info!("sent response to client");
+    info!(
+        { n_bytes_written = raw_response.len() },
+        "wrote to TCP stream"
+    );
 }

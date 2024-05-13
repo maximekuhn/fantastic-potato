@@ -2,7 +2,7 @@ use std::net::SocketAddr;
 
 use http::{header, Request, Response};
 use thiserror::Error;
-use tracing::info;
+use tracing::trace;
 
 use crate::request_parser::RequestBody;
 
@@ -31,7 +31,7 @@ pub async fn send_request(
     // TODO: handle body
     // FIXME: remove trailing '/' from backend_addr, if any
     let url = format!("http://{}{}", backend_addr, req.uri());
-    info!(%url);
+    trace!(%url);
     let req_builder = client
         .request(req.method().clone(), url)
         .headers(req.headers().clone());
